@@ -1,0 +1,136 @@
+# import tensorflow as tf
+# import numpy as np
+#
+# #create data
+# x_data=np.random.rand(100).astype(np.float32)
+# # print(x_data)
+# y_data=x_data*0.1+0.3#标签值
+#
+# Weights=tf.Variable(tf.random_uniform([1],-1.0,1.0))
+# biases=tf.Variable(tf.zeros([1]))
+# y=Weights*x_data+biases
+#
+# loss=tf.reduce_mean(tf.square(y-y_data))
+# optimizer=tf.train.GradientDescentOptimizer(0.5)#learning rate
+# train=optimizer.minimize(loss)
+#
+# init=tf.global_variables_initializer() 初始化变量步骤
+# sess=tf.Session()
+# sess.run(init)
+#
+# for step in range(201):
+#     sess.run(train)
+#     if step%20==0:
+#         print(step,sess.run(Weights),sess.run(biases))
+
+
+# #控制 session
+# import tensorflow as tf
+# matrix1=tf.constant([[3,3]])
+# # print(matrix1)
+# matrix2=tf.constant([[2],[2]])
+# product=tf.matmul(matrix1,matrix2)
+#
+# #session 控制方法2种
+#
+# #1
+# sess=tf.Session()
+# result=sess.run(product)
+# print(result)
+# sess.close()
+#
+# #method2
+# with tf.Session() as sess:
+#     result2=sess.run(product)
+#     print(result2)
+
+
+#variable
+
+# import  tensorflow as tf
+# state=tf.Variable(0,name='counter')
+#
+# one=tf.constant(1)#定义常量1
+# new_value=tf.add(state,one)
+#
+# update=tf.assign(state,new_value)
+#
+# #定义了变量一定要初始化
+# init=tf.global_variables_initializer()
+#
+# with tf.Session() as sess:
+#     sess.run(init)
+#     for _ in range(3):
+#         sess.run(update)
+#         print(sess.run(state))
+
+
+#placeholder 是 Tensorflow 中的占位符，暂时储存变量.
+# Tensorflow 如果想要从外部传入data, 那就需要用到 tf.placeholder(),
+# 然后以这种形式传输数据 sess.run(***, feed_dict={input: **})
+
+# import  tensorflow as tf
+# #在 Tensorflow 中需要定义 placeholder 的 type ，一般为 float32 形式
+# input1=tf.placeholder(tf.float32)
+# input2=tf.placeholder(tf.float32)
+# output=tf.multiply(input1,input2)
+#
+# with tf.Session() as sess:
+#     print(sess.run(output,feed_dict={input1:[7.],input2:[2.]}))
+# #placeholder 与 feed_dict={} 是绑定在一起出现的。
+
+#定义add_layer()
+import  tensorflow as tf
+import  numpy as np
+def add_layer(inputs,in_size,out_size,activation_function=None):
+    Weights=tf.Variable(tf.random_normal([in_size,out_size]))
+    biases=tf.Variable(tf.zeros([1,out_size]))
+    Wx_plus_b=tf.matmul(inputs,Weights)+biases
+    if activation_function==None:
+        outputs=Wx_plus_b
+    else:
+        outputs=activation_function(Wx_plus_b)
+    return outputs
+
+#构造数据
+x_data=np.linspace(-1,1,300,dtype=np.float32)[:,np.newaxis]
+# print(x_data)
+noise=np.random.normal(0,0.05,x_data.shape).astype(np.float32)
+y_data=np.square(x_data)-0.5+noise
+#利用占位符定义我们所需的神经网络的输入。
+# tf.placeholder()就是代表占位符，这里的None代表无论输入有多少都可以，
+# 因为输入只有一个特征，所以这里是1。
+xs=tf.placeholder(tf.float32,[None,1])
+ys=tf.placeholder(tf.float32,[None,1])
+#我们构建的是——输入层1个、隐藏层10个、输出层1个的神经网络。
+l1=add_layer(xs,1,10,activation_function=tf.nn.relu)
+prediction=add_layer(l1,10,1,activation_function=None)
+loss=tf.reduce_mean(tf.reduce_sum(tf.square(ys-prediction),reduction_indices=[1]))
+train_step=tf.train.GradientDescentOptimizer(0.1).minimize(loss)
+
+init=tf.global_variables_initializer()
+sess=tf.Session()
+sess.run(init)
+
+
+
+import  matplotlib.pyplot as plt
+fig=plt.figure()
+ax=fig.add_subplot(1,1,1)
+ax.scatter(x_data,y_data)
+plt.ion()#连续显示
+plt.show()
+
+for i in range(1000):
+    # training
+    sess.run(train_step, feed_dict={xs: x_data, ys: y_data})
+    if i % 50 == 0:
+        # to visualize the result and improvement
+        try:
+            ax.lines.remove(lines[0])
+        except Exception:
+            pass
+        prediction_value = sess.run(prediction, feed_dict={xs: x_data})
+        # plot the prediction
+        lines = ax.plot(x_data, prediction_value, 'r-', lw=5)
+        plt.pause(0.1)
